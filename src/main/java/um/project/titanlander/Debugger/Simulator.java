@@ -12,7 +12,7 @@ public class Simulator {
     }
 
     //---
-    private LandingModule landingModule = new LandingModule(new Vector2(0, 1000), new Vector2(0, -8));
+    private LandingModule landingModule = new LandingModule(new Vector2(0, 1000), new Vector2(0, -4), LandingModule.ControllerMode.OPEN);
     private UI ui = new UI();
 
     public Simulator() {
@@ -21,9 +21,10 @@ public class Simulator {
 
     public void update() {
         while (true) {
+            landingModule.updateController();
             landingModule.updateVelocity();
             landingModule.updatePosition();
-            System.out.printf("velocity: %.4fm/s\n", landingModule.getVelocity().length());
+            System.out.println(landingModule);
             ui.repaint();
             try {
                 Thread.sleep(33);
@@ -68,21 +69,24 @@ public class Simulator {
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, frame.getWidth(), frame.getHeight());
 
+            g.setColor(Color.GREEN);
+            g.drawRect(0, 0, 1280, 720);
+
             {
                 g.setColor(Color.BLUE);
-                g.drawLine(0, 1260, frame.getWidth(), 20);
+                g.drawLine(0, 1280, frame.getWidth(), 1280);
             }
 
             {
                 Vector2 screen = toScreenCoordinates(landingModule.getPosition());
                 g.setColor(Color.RED);
-                g.drawRect((int) screen.getX(), (int) screen.getY(), 3, 3);
+                g.drawRect((int) (screen.getX()-(landingModule.getWidth()/2D)), (int) (screen.getY()-(landingModule.getHeight()/2D)), (int) landingModule.getWidth(), (int) landingModule.getHeight());
             }
 
         }
 
         public Vector2 toScreenCoordinates(Vector2 vec) {
-            return new Vector2(vec.getX() + (frame.getWidth() / 2D), frame.getHeight() - vec.getY());
+            return new Vector2(vec.getX() + 640.0, 720 - vec.getY());
         }
 
     }

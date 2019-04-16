@@ -32,6 +32,10 @@ public class Vector2 {
         return new Vector2(this.x * x, this.y  * x);
     }
 
+    public Vector2 div(double x) {
+        return new Vector2(this.x / x, this.y / x);
+    }
+
     public double length() {
         return this.length;
     }
