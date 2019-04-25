@@ -10,7 +10,7 @@ public class Simulator {
     }
 
     //---
-    private LandingModule landingModule = new LandingModule(new Vector2(300, 720), new Vector2(-10, -10), LandingModule.ControllerMode.OPEN);
+    private LandingModule landingModule = new LandingModule(new Vector2(300, 1200), new Vector2(-25, -10), LandingModule.ControllerMode.OPEN);
     private UI ui = new UI();
 
     public Simulator() {
@@ -27,7 +27,7 @@ public class Simulator {
             ui.repaint();
             try {
                 System.out.println(i++);
-                Thread.sleep(120);
+                    Thread.sleep(30);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
