@@ -40,6 +40,10 @@ public class Vector2 {
         return this.length;
     }
 
+    public Vector2 copy() {
+        return new Vector2(this.x, this.y);
+    }
+
     @Override
     public String toString() {
         return String.format("Vec2[x=%.4f,y=%.2f]", this.x, this.y);

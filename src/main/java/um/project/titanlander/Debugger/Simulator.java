@@ -10,7 +10,7 @@ public class Simulator {
     }
 
     //---
-    private LandingModule landingModule = new LandingModule(new Vector2(300, 1200), new Vector2(-25, -10), LandingModule.ControllerMode.OPEN);
+    private LandingModule landingModule = new LandingModule(new Vector2(50, 700), new Vector2(-20, -3), LandingModule.ControllerMode.CLOSED);
     private UI ui = new UI();
 
     public Simulator() {
@@ -25,9 +25,9 @@ public class Simulator {
             landingModule.updateController();
             System.out.println(landingModule);
             ui.repaint();
-            try {
                 System.out.println(i++);
-                    Thread.sleep(30);
+            try {
+                Thread.sleep(3);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -63,6 +63,11 @@ public class Simulator {
                 Vector2 screen = toScreenCoordinates(landingModule.getPosition());
                 g.setColor(Color.RED);
                 g.drawRect((int) (screen.getX()-(landingModule.getWidth()/2D)), (int) (screen.getY()-(landingModule.getHeight()/2D)), (int) landingModule.getWidth(), (int) landingModule.getHeight());
+
+
+                Vector2 shadow = toScreenCoordinates(landingModule.getRealPositions());
+                g.setColor(Color.PINK);
+                g.drawRect((int) (shadow.getX()-(landingModule.getWidth()/2D)), (int) (shadow.getY()-(landingModule.getHeight()/2D)), (int) landingModule.getWidth(), (int) landingModule.getHeight());
 
                 {
                     if(landingModule.leftThruster.isBurning()) {

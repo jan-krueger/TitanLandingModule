@@ -2,19 +2,20 @@ package um.project.titanlander.Debugger;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
 
 public class LandingModule {
 
-    private final static double TIME_STEP = 0.1;
+    private final static double TIME_STEP = 0.05;
     private final static double GRAVITY = 1.352E-2; //0.01352m/s^2
 
     private Vector2 velocity;
-    private Vector2 position; // actual position
-    private Vector2 realPositions; // openloop controller
+    private Vector2 position;
+
+    private Vector2 realPositions;
+    private Vector2 realVelocity;
 
     private DataLogger dataLogger = new DataLogger();
 
@@ -33,13 +34,20 @@ public class LandingModule {
     private ControllerMode controllerMode;
 
     public LandingModule(Vector2 position, Vector2 velocity, ControllerMode controllerMode) {
-        this.velocity = velocity;
-        this.position = position;
+        this.realVelocity = velocity;
+        this.realPositions = position;
         this.controllerMode = controllerMode;
 
-        if(controllerMode == ControllerMode.OPEN) {
-            this.realPositions = position;
-        }
+        this.velocity = velocity.copy();
+        this.position = position.copy();
+    }
+
+    public Vector2 getRealPositions() {
+        return realPositions;
+    }
+
+    public Vector2 getRealVelocity() {
+        return realVelocity;
     }
 
     public double getHeight() {
@@ -57,7 +65,7 @@ public class LandingModule {
     double min = Double.MAX_VALUE;
     public void updateController() {
 
-        if(this.controllerMode == ControllerMode.OPEN) {
+        if(true) {
 
             final double distanceY = Math.abs(this.getPosition().getY());
             final double distanceX = Math.abs(this.getPosition().getX());
@@ -68,12 +76,12 @@ public class LandingModule {
                 System.out.println("right: " + rightThruster.fuelUsed);
 
                 StringBuffer buffer = new StringBuffer();
-                buffer.append("height,left,down,right,px,windStrength\n");
+                buffer.append("height,left,down,right,px,x,windStrength\n");
                 for(Map.Entry<Double, Map<String, Double>> entry : dataLogger.getData().entrySet()) {
-                    buffer.append(String.format("%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n", entry.getKey(), entry.getValue().get("left"), entry.getValue().get("down"), entry.getValue().get("right"), entry.getValue().get("position"), entry.getValue().get("windStrength")));
+                    buffer.append(String.format("%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n", entry.getKey(), entry.getValue().get("left"), entry.getValue().get("down"), entry.getValue().get("right"), entry.getValue().get("realPosition"), entry.getValue().get("position"), entry.getValue().get("windStrength")));
                 }
                 try {
-                    Files.write(Paths.get("test.csv"), buffer.toString().getBytes(), StandardOpenOption.WRITE);
+                    Files.write(Paths.get("test.csv"), buffer.toString().getBytes(), StandardOpenOption.CREATE_NEW, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -97,9 +105,10 @@ public class LandingModule {
 
             if(distanceX >= 0) {
                 final double xF = this.getVelocity().getX() * mass;
-                double timeToX = distanceX / Math.abs(this.getVelocity().getX());
+                final double xV = this.getVelocity().getX();
+                double timeToX = (distanceX / Math.abs(this.getVelocity().getX()));
 
-                if (xF > 1E-6) { //moving right
+                if (xV > 1E-1) { //moving right
                     // Do we overstep in the next update?
                     if (this.getPosition().add(this.velocity.mul(TIME_STEP)).getX() > 0) {
                         rightThruster.burn(Math.abs(xF / (this.rightThruster.getForce(mass))));
@@ -120,7 +129,7 @@ public class LandingModule {
                         System.out.println("B1");
                         leftThruster.burn(leftThruster.getForce(mass) / Math.abs(((distanceX / breakingTime) / breakingTime) - Math.abs(this.getVelocity().getX())));
                     }
-                } else if (xF < -1E-6) { //moving left
+                } else if (xV < -1E-1) { //moving left
                     if (this.getPosition().add(this.velocity.mul(TIME_STEP)).getX() < 0) {
                         leftThruster.burn(Math.abs(xF / (this.leftThruster.getForce(mass))));
                         System.out.println("E");
@@ -137,7 +146,7 @@ public class LandingModule {
                         rightThruster.burn(rightThruster.getForce(mass) / Math.abs(((distanceX / breakingTime) / breakingTime) - Math.abs(this.getVelocity().getX())));
                     }
                     //System.out.println("a: " + (distanceX / Math.abs(this.getVelocity().getX())) + " - " + Math.abs(this.getVelocity().getX()) / (this.leftThruster.getForce() / mass));
-                } else {
+                } else if(distanceX > 0.1) {
                     if (this.getPosition().getX() < 0) {
                         leftThruster.burn(leftThruster.getForce(mass) / Math.abs(((distanceX / timeToX) / timeToX) - Math.abs(this.getVelocity().getX())));
                     } else if (this.getPosition().getX() > 0) {
@@ -157,51 +166,54 @@ public class LandingModule {
             this.position = new Vector2(this.position.getX(), 0);
         }
 
+        this.realPositions = this.realPositions.add(this.realVelocity.mul(TIME_STEP));
+        if(this.realPositions.getY() < 0) {
+            this.realPositions = new Vector2(this.realPositions.getX(), 0);
+        }
     }
 
     public void updateVelocity() {
 
         //--- Gravity
         //v+1 = v + (Gv*m)/deltaY
-        this.velocity = this.velocity.add(new Vector2(0, GRAVITY).mul(mass).div(Math.pow(1287850-this.getPosition().getY(), 2)).mul(-1));
+        Vector2 gravity = new Vector2(0, GRAVITY).mul(mass).div(Math.pow(1287850-this.getPosition().getY(), 2)).mul(-1);
+        this.realVelocity = this.realVelocity.add(gravity);
+        this.velocity = this.velocity.add(gravity);
 
         //--- Thrusters
         final double key = this.getPosition().getY();
+        dataLogger.add(key, "realPosition", realPositions.getX());
         dataLogger.add(key, "position", position.getX());
         {
             Vector2 thrust = downThruster.getThrust(mass);
             dataLogger.add(key, "down", thrust.length());
+            this.realVelocity = this.realVelocity.add(thrust);
             this.velocity = this.velocity.add(thrust);
-
         }
         {
             Vector2 thrust = leftThruster.getThrust(mass);
             dataLogger.add(key, "left", -thrust.length());
+            this.realVelocity = this.realVelocity.add(thrust);
             this.velocity = this.velocity.add(thrust);
-
         }
         {
             Vector2 thrust = rightThruster.getThrust(mass);
             dataLogger.add(key, "right", thrust.length());
+            this.realVelocity = this.realVelocity.add(thrust);
             this.velocity = this.velocity.add(thrust);
-
         }
 
         //--- Rotation
-        this.setTheta(this.theta + this.thetaVelocity);
-
-        if(this.position.getY() <= 0) {
-            this.velocity = new Vector2(0, 0);
-            this.position = new Vector2(this.position.getX(), 0);
-        }
+        //this.setTheta(this.theta + this.thetaVelocity);
 
         Vector2 v = wind(getPosition(), mass);
         dataLogger.add(key, "windStrength", v.getX());
         if(!Double.isNaN(v.getX())) {
-            this.velocity = this.velocity.add(v);
-        } else
-            System.out.println(v);
-
+            if(this.controllerMode == ControllerMode.CLOSED) {
+                this.velocity = this.velocity.add(v);
+            }
+            this.realVelocity = this.realVelocity.add(v);
+        }
 
         downThruster.update();
         leftThruster.update();
@@ -218,7 +230,7 @@ public class LandingModule {
 
     @Override
     public String toString() {
-        return String.format("Module[p=%s,v=%s,θ=%.4f,θ'=%.4f]", this.position, this.velocity, Math.toDegrees(this.theta), Math.toDegrees(this.thetaVelocity));
+        return String.format("Module\n\tr:[p=%s,v=%s]\n\ta:[p=%s,v=%s]", this.realPositions, this.realVelocity, this.position, this.velocity);
     }
 
     public class Thruster {
@@ -286,12 +298,13 @@ public class LandingModule {
     }
 
     public enum ControllerMode {
-        OPEN
+        OPEN,
+        CLOSED
     }
 
     public static Vector2 wind(Vector2 pos, double mass) {
         final double speed = 2D * (Math.log(pos.getY() / 0.15D)/Math.log(20D/0.15D));
-        final Vector2 dir = new Vector2(1 * Math.sin(pos.getY()/100D), 0);
+        final Vector2 dir = new Vector2(0.5 * Math.sin(pos.getY()/100D), 0);
         return dir.mul(speed).div(mass);
     }
 
