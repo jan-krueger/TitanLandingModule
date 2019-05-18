@@ -1,7 +1,7 @@
 package um.project.titanlander.Debugger.lander;
 
 import um.project.titanlander.Debugger.DataLogger;
-import um.project.titanlander.Debugger.Vector2;
+import um.project.titanlander.Debugger.Vector3;
 import um.project.titanlander.Debugger.lander.thruster.RotationThruster;
 import um.project.titanlander.Debugger.lander.thruster.Thruster;
 
@@ -17,11 +17,11 @@ public class LandingModule {
 
     private boolean isLanded = false;
 
-    private Vector2 velocity;
-    private Vector2 position;
+    private Vector3 velocity;
+    private Vector3 position;
 
-    private Vector2 realPositions;
-    private Vector2 realVelocity;
+    private Vector3 realPositions;
+    private Vector3 realVelocity;
 
     private DataLogger dataLogger = new DataLogger();
 
@@ -36,13 +36,15 @@ public class LandingModule {
     public Thruster downThruster = new Thruster(Direction.Y_POS, 400, mass);
     public Thruster leftThruster = new Thruster(Direction.X_POS, 200, mass);
     public Thruster rightThruster = new Thruster(Direction.X_NEG, 200, mass);
+    public Thruster frontThruster = new Thruster(Direction.Z_POS, 200, mass);
+    public Thruster backThruster = new Thruster(Direction.Z_NEG, 200, mass);
 
     public RotationThruster leftRotation = new RotationThruster(Direction.X_NEG, 50, mass, Math.sqrt(2), 2);
     public RotationThruster rightRotation = new RotationThruster(Direction.X_POS, 50, mass, Math.sqrt(2), 2);
 
     private ControllerMode controllerMode;
 
-    public LandingModule(Vector2 position, Vector2 velocity, ControllerMode controllerMode) {
+    public LandingModule(Vector3 position, Vector3 velocity, ControllerMode controllerMode) {
         this.realVelocity = velocity;
         this.realPositions = position;
         this.controllerMode = controllerMode;
@@ -51,11 +53,11 @@ public class LandingModule {
         this.position = position.copy();
     }
 
-    public Vector2 getRealPositions() {
+    public Vector3 getRealPositions() {
         return realPositions;
     }
 
-    public Vector2 getRealVelocity() {
+    public Vector3 getRealVelocity() {
         return realVelocity;
     }
 
@@ -75,7 +77,6 @@ public class LandingModule {
     public void updateController() {
 
         final double distanceY = Math.abs(this.getPosition().getY());
-        final double distanceX = Math.abs(this.getPosition().getX());
 
         if(distanceY < 1E-2) {
             this.isLanded = true;
@@ -157,9 +158,7 @@ public class LandingModule {
 
         // --- Y-burn
         final double signedYForce = this.getVelocity().getY() * mass;
-
         final double yBreakingTime = distanceY / Math.abs(this.getVelocity().getY());
-        //System.out.println(breakingTime + " < " + toZero);
 
         if((signedYForce < 0 && yBreakingTime <= yToZero) && distanceY > 0.5) {
             downThruster.burn(yBreakingTime);
@@ -167,60 +166,66 @@ public class LandingModule {
         }
 
         //Horizontal Translation
-        if(distanceX >= 0) {
-            final double xF = this.getVelocity().getX() * mass;
-            final double xV = this.getVelocity().getX();
-            double timeToX = (distanceX / Math.abs(this.getVelocity().getX()));
+        controlHorizontalAxis(Vector3.Component.X, leftThruster, rightThruster, Math.abs(getPosition().getX()), yBreakingTime, this.getVelocity().getX() * mass, this.getVelocity().getX());
+        controlHorizontalAxis(Vector3.Component.Z, frontThruster, backThruster, Math.abs(getPosition().getZ()), yBreakingTime, this.getVelocity().getZ() * mass, this.getVelocity().getZ());
 
-            final double velocityLimit = 1E-3;
 
-            if (xV > velocityLimit) { //moving right
-                // Do we overstep in the next update?
-                if (this.getPosition().add(this.velocity.mul(TIME_STEP)).getX() > 0) {
-                    rightThruster.burn(Math.abs(xF / (this.rightThruster.getForce())));
-                    System.out.println("A");
-                } else if (this.getVelocity().getX() / (rightThruster.getForce()) <= TIME_STEP) {
-                    final double maxThrust = (rightThruster.getForce());
-                    final double thrustDelta = maxThrust - Math.abs(xF);
-                    leftThruster.burn(Math.abs((thrustDelta) / leftThruster.getForce()));
-                    System.out.println("B");
-                }
-                // Are we too slow to get to x=0 in time? -> Accelerate
-                else if(timeToX <= (Math.abs(this.getVelocity().getX())/ rightThruster.getForce())) {
-                    rightThruster.burn( rightThruster.getForce() / Math.abs(((distanceX / timeToX) / timeToX) - Math.abs(this.getVelocity().getX())));
-                    System.out.println("D");
-                }
-                // Are we going too fast? ->  Decelerate
-                else if(timeToX >= yBreakingTime) {
-                    System.out.println("B1");
-                    leftThruster.burn(leftThruster.getForce() / Math.abs(((distanceX / yBreakingTime) / yBreakingTime) - Math.abs(this.getVelocity().getX())));
-                }
-            } else if (xV < -velocityLimit) { //moving left
-                if (this.getPosition().add(this.velocity.mul(TIME_STEP)).getX() < 0) {
-                    leftThruster.burn(Math.abs(xF / (this.leftThruster.getForce())));
-                    System.out.println("E");
-                } else if (Math.abs(this.getVelocity().getX()) / (leftThruster.getForce()) <=  TIME_STEP) {
-                    final double maxThrust = (leftThruster.getForce());
-                    final double thrustDelta = maxThrust - Math.abs(xF);
-                    rightThruster.burn(Math.abs((thrustDelta) / rightThruster.getForce()));
-                    System.out.println("F");
-                } else if(timeToX <= (Math.abs(this.getVelocity().getX())/ leftThruster.getForce())) {
-                    leftThruster.burn( leftThruster.getForce() / Math.abs(((distanceX / timeToX) / timeToX) - Math.abs(this.getVelocity().getX())));
-                    System.out.println("H");
-                } else if(timeToX >= yBreakingTime) {
-                    System.out.println("B2");
-                    rightThruster.burn(rightThruster.getForce() / Math.abs(((distanceX / yBreakingTime) / yBreakingTime) - Math.abs(this.getVelocity().getX())));
-                }
-                //System.out.println("a: " + (distanceX / Math.abs(this.getVelocity().getX())) + " - " + Math.abs(this.getVelocity().getX()) / (this.leftThruster.getForce() / mass));
-            } else if(distanceX > 0.1) {
-                if (this.getPosition().getX() < 0) {
-                    leftThruster.burn(leftThruster.getForce() / Math.abs(((distanceX / timeToX) / timeToX) - Math.abs(this.getVelocity().getX())));
-                } else if (this.getPosition().getX() > 0) {
-                    rightThruster.burn(rightThruster.getForce() / Math.abs(((distanceX / yBreakingTime) / yBreakingTime) - Math.abs(this.getVelocity().getX())));
-                }
-            }
+    }
+
+    private void controlHorizontalAxis(Vector3.Component axis, Thruster positiveThruster, Thruster negativeThruster, double distanceToAxis, double yBreakingTime,
+                                       double aF, double aV) {
+
+        if(distanceToAxis <= 0) {
+            return;
         }
 
+        final double velocityLimit = 1E-3;
+        final double timeToX = (distanceToAxis / Math.abs(aV));
+
+        if (aV > velocityLimit) { //moving right
+            // Do we overstep in the next update?
+            if (this.getPosition().add(this.velocity.mul(TIME_STEP)).get(axis) > 0) {
+                negativeThruster.burn(Math.abs(aF / (negativeThruster.getForce())));
+                System.out.println("A");
+            } else if (this.getVelocity().get(axis) / (negativeThruster.getForce()) <= TIME_STEP) {
+                final double maxThrust = (negativeThruster.getForce());
+                final double thrustDelta = maxThrust - Math.abs(aF);
+                positiveThruster.burn(Math.abs((thrustDelta) / positiveThruster.getForce()));
+                System.out.println("B");
+            }
+            // Are we too slow to get to x=0 in time? -> Accelerate
+            else if(timeToX <= (Math.abs(this.getVelocity().get(axis))/ negativeThruster.getForce())) {
+                negativeThruster.burn( negativeThruster.getForce() / Math.abs(((distanceToAxis / timeToX) / timeToX) - Math.abs(this.getVelocity().get(axis))));
+                System.out.println("D");
+            }
+            // Are we going too fast? ->  Decelerate
+            else if(timeToX >= yBreakingTime) {
+                System.out.println("B1");
+                positiveThruster.burn(positiveThruster.getForce() / Math.abs(((distanceToAxis / yBreakingTime) / yBreakingTime) - Math.abs(this.getVelocity().get(axis))));
+            }
+        } else if (aV < -velocityLimit) { //moving left
+            if (this.getPosition().add(this.velocity.mul(TIME_STEP)).get(axis) < 0) {
+                positiveThruster.burn(Math.abs(aF / (positiveThruster.getForce())));
+                System.out.println("E");
+            } else if (Math.abs(this.getVelocity().get(axis)) / (positiveThruster.getForce()) <=  TIME_STEP) {
+                final double maxThrust = (positiveThruster.getForce());
+                final double thrustDelta = maxThrust - Math.abs(aF);
+                negativeThruster.burn(Math.abs((thrustDelta) / negativeThruster.getForce()));
+                System.out.println("F");
+            } else if(timeToX <= (Math.abs(this.getVelocity().get(axis))/ positiveThruster.getForce())) {
+                positiveThruster.burn( positiveThruster.getForce() / Math.abs(((distanceToAxis / timeToX) / timeToX) - Math.abs(this.getVelocity().get(axis))));
+                System.out.println("H");
+            } else if(timeToX >= yBreakingTime) {
+                System.out.println("B2");
+                negativeThruster.burn(negativeThruster.getForce() / Math.abs(((distanceToAxis / yBreakingTime) / yBreakingTime) - Math.abs(this.getVelocity().get(axis))));
+            }
+        } else if(distanceToAxis > 0.1) {
+            if (this.getPosition().get(axis) < 0) {
+                positiveThruster.burn(positiveThruster.getForce() / Math.abs(((distanceToAxis / timeToX) / timeToX) - Math.abs(this.getVelocity().get(axis))));
+            } else if (this.getPosition().get(axis) > 0) {
+                negativeThruster.burn(negativeThruster.getForce() / Math.abs(((distanceToAxis / yBreakingTime) / yBreakingTime) - Math.abs(this.getVelocity().get(axis))));
+            }
+        }
     }
 
     public void updatePosition() {
@@ -229,12 +234,12 @@ public class LandingModule {
 
         this.position = this.position.add(this.velocity.mul(TIME_STEP));
         if(this.position.getY() < 0) {
-            this.position = new Vector2(this.position.getX(), 0);
+            this.position = new Vector3(this.position.getX(), 0, this.position.getZ());
         }
 
         this.realPositions = this.realPositions.add(this.realVelocity.mul(TIME_STEP));
         if(this.realPositions.getY() < 0) {
-            this.realPositions = new Vector2(this.realPositions.getX(), 0);
+            this.realPositions = new Vector3(this.realPositions.getX(), 0, this.position.getZ());
         }
     }
 
@@ -249,20 +254,30 @@ public class LandingModule {
         dataLogger.add(key, "realPosition", realPositions.getX());
         dataLogger.add(key, "position", position.getX());
 
-        Vector2 thrustTotal = new Vector2(0, 0);
+        Vector3 thrustTotal = new Vector3(0, 0, 0);
         {
-            Vector2 thrust = applyRotation(downThruster.getThrust());
+            Vector3 thrust = applyRotation(downThruster.getThrust());
             dataLogger.add(key, "down", thrust.length());
             thrustTotal = thrustTotal.add(thrust);
         }
         {
-            Vector2 thrust = applyRotation(leftThruster.getThrust());
+            Vector3 thrust = applyRotation(leftThruster.getThrust());
             dataLogger.add(key, "left", -thrust.length());
             thrustTotal = thrustTotal.add(thrust);
         }
         {
-            Vector2 thrust = applyRotation(rightThruster.getThrust());
+            Vector3 thrust = applyRotation(rightThruster.getThrust());
             dataLogger.add(key, "right", thrust.length());
+            thrustTotal = thrustTotal.add(thrust);
+        }
+        {
+            Vector3 thrust = applyRotation(backThruster.getThrust());
+            dataLogger.add(key, "back", -thrust.length());
+            thrustTotal = thrustTotal.add(thrust);
+        }
+        {
+            Vector3 thrust = applyRotation(frontThruster.getThrust());
+            dataLogger.add(key, "front", thrust.length());
             thrustTotal = thrustTotal.add(thrust);
         }
 
@@ -282,12 +297,12 @@ public class LandingModule {
 
         //--- Gravity
         //v+1 = v + (Gv*m)/deltaY
-        Vector2 gravity = new Vector2(0, GRAVITY).mul(mass).div(Math.pow(1287850D-this.getPosition().getY(), 2)).mul(-1);
+        Vector3 gravity = new Vector3(0, GRAVITY, 0).mul(mass).div(Math.pow(1287850D-this.getPosition().getY(), 2)).mul(-1);
         this.realVelocity = this.realVelocity.add(gravity);
         this.velocity = this.velocity.add(gravity);
 
 
-        Vector2 v = wind(getPosition(), mass);
+        Vector3 v = wind(getPosition(), mass);
         dataLogger.add(key, "windStrength", v.getX());
         if(!Double.isNaN(v.getX())) {
             if(this.controllerMode == ControllerMode.CLOSED) {
@@ -301,18 +316,20 @@ public class LandingModule {
         downThruster.update();
         leftThruster.update();
         rightThruster.update();
+        frontThruster.update();
+        backThruster.update();
     }
 
-    private Vector2 applyRotation(Vector2 force) {
-        return new Vector2(force.getX() * Math.cos(theta) - force.getY() * Math.sin(theta),
-                force.getX() * Math.sin(theta) + force.getY() * Math.cos(theta));
+    private Vector3 applyRotation(Vector3 force) {
+        return new Vector3(force.getX() * Math.cos(theta) - force.getY() * Math.sin(theta),
+                force.getX() * Math.sin(theta) + force.getY() * Math.cos(theta), force.getZ());
     }
 
-    public Vector2 getPosition() {
+    public Vector3 getPosition() {
         return this.position;
     }
 
-    public Vector2 getVelocity() {
+    public Vector3 getVelocity() {
         return this.velocity;
     }
 
@@ -323,9 +340,9 @@ public class LandingModule {
                 this.position, this.velocity, Math.toDegrees(this.theta), Math.toDegrees(this.thetaVelocity));
     }
 
-    public static Vector2 wind(Vector2 pos, double mass) {
+    public static Vector3 wind(Vector3 pos, double mass) {
         final double speed = 2D * (Math.log(pos.getY() / 0.15D)/Math.log(20D/0.15D));
-        final Vector2 dir = new Vector2(0.1 * Math.sin(pos.getY()/100D), 0).normalise();
+        final Vector3 dir = new Vector3(0.1 * Math.sin(pos.getY()/100D), 0, 0).normalise();
         return dir.mul(speed).div(mass).mul(TIME_STEP);
     }
 

@@ -1,6 +1,6 @@
 package um.project.titanlander.Debugger.lander.thruster;
 
-import um.project.titanlander.Debugger.Vector2;
+import um.project.titanlander.Debugger.Vector3;
 import um.project.titanlander.Debugger.lander.Direction;
 import um.project.titanlander.Debugger.lander.LandingModule;
 
@@ -30,7 +30,7 @@ public class RotationThruster extends IThruster<Double, Double> {
 
     @Override
     public Double getThrust() {
-        Vector2 t = new Vector2();
+        Vector3 t = new Vector3();
         if(isBurning()) {
             t = getDirection().direction().mul(getRawForce()).div(getMass()).div(r).mul(Math.pow(h, 4) / 12D).mul(Math.min(LandingModule.TIME_STEP, getTimeToBurn()));
         }

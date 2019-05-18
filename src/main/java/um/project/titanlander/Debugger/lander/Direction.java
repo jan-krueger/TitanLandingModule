@@ -1,19 +1,21 @@
 package um.project.titanlander.Debugger.lander;
 
-import um.project.titanlander.Debugger.Vector2;
+import um.project.titanlander.Debugger.Vector3;
 
 public enum Direction {
 
-    X_NEG(new Vector2(-1, 0)),
-    X_POS(new Vector2(1, 0)),
-    Y_POS(new Vector2(0, 1));
+    X_NEG(new Vector3(-1, 0, 0)),
+    X_POS(new Vector3(1, 0, 0)),
+    Z_NEG(new Vector3(0, 0, -1)),
+    Z_POS(new Vector3(0, 0, 1)),
+    Y_POS(new Vector3(0, 1, 0));
 
-    private Vector2 dir;
-    Direction(Vector2 dir) {
+    private Vector3 dir;
+    Direction(Vector3 dir) {
         this.dir = dir;
     }
 
-    public Vector2 direction() {
+    public Vector3 direction() {
         return dir;
     }
 

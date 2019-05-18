@@ -17,7 +17,7 @@ public class Simulator {
     }
 
     //---
-    private LandingModule landingModule = new LandingModule(new Vector2(200, 700), new Vector2(-10, -3), ControllerMode.OPEN);
+    private LandingModule landingModule = new LandingModule(new Vector3(200, 700, -100), new Vector3(-10, -3, -30), ControllerMode.CLOSED);
     private UI ui = new UI();
 
     public Simulator() {
@@ -77,27 +77,27 @@ public class Simulator {
             }
 
             {
-                Vector2 screen = toScreenCoordinates(landingModule.getPosition());
+                Vector3 screen = toScreenCoordinates(landingModule.getPosition());
                 g.setColor(Color.RED);
                 g.drawRect((int) (screen.getX()-(landingModule.getWidth()/2D)), (int) (screen.getY()-(landingModule.getHeight()/2D)), (int) landingModule.getWidth(), (int) landingModule.getHeight());
 
 
-                Vector2 shadow = toScreenCoordinates(landingModule.getRealPositions());
+                Vector3 shadow = toScreenCoordinates(landingModule.getRealPositions());
                 g.setColor(Color.PINK);
                 g.drawRect((int) (shadow.getX()-(landingModule.getWidth()/2D)), (int) (shadow.getY()-(landingModule.getHeight()/2D)), (int) landingModule.getWidth(), (int) landingModule.getHeight());
 
                 {
                     if(landingModule.leftThruster.isBurning()) {
-                        Vector2 left = screen.add(new Vector2(-20, 0));
+                        Vector3 left = screen.add(new Vector3(-20, 0, 0));
                         g.drawLine((int) screen.getX(), (int) screen.getY(), (int) left.getX(), (int) left.getY());
                     }
                     if(landingModule.rightThruster.isBurning()) {
-                        Vector2 left = screen.add(new Vector2(20, 0));
+                        Vector3 left = screen.add(new Vector3(20, 0, 0));
                         g.drawLine((int) screen.getX(), (int) screen.getY(), (int) left.getX(), (int) left.getY());
                     }
 
                     if(landingModule.downThruster.isBurning()) {
-                        Vector2 left = screen.add(new Vector2(0, 20));
+                        Vector3 left = screen.add(new Vector3(0, 20, 0));
                         g.drawLine((int) screen.getX(), (int) screen.getY(), (int) left.getX(), (int) left.getY());
                     }
                 }
@@ -106,14 +106,14 @@ public class Simulator {
 
             {
                 g.setColor(Color.CYAN);
-                Vector2 screen = toScreenCoordinates(new Vector2(0, 0));
+                Vector3 screen = toScreenCoordinates(new Vector3(0, 0, 0));
                 g.drawOval((int) screen.getX(), (int) screen.getX(), 2, 2);
             }
 
         }
 
-        public Vector2 toScreenCoordinates(Vector2 vec) {
-            return new Vector2((vec.getX() + 640.0), (720 - vec.getY()));
+        public Vector3 toScreenCoordinates(Vector3 vec) {
+            return new Vector3((vec.getX() + 640.0), (720 - vec.getY()), vec.getZ());
         }
 
     }
