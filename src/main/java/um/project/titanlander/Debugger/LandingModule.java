@@ -18,7 +18,7 @@ public class LandingModule {
 
     private DataLogger dataLogger = new DataLogger();
 
-    private double theta = Math.PI; // rotation
+    private double theta = -Math.PI/2D; // rotation
     private double thetaVelocity = Math.PI / 300;
 
     private double mass = 300;
@@ -88,6 +88,8 @@ public class LandingModule {
             return;
         }
 
+        double yToZero = Math.abs(this.getVelocity().getY()) / (this.downThruster.getForce(mass));
+
         // --- Rotation
         if(Math.abs(theta) > 1E-4) {
             final double timeTo0 = Math.abs(theta / thetaVelocity);
@@ -99,7 +101,7 @@ public class LandingModule {
                 } else {
                     rightRotation.burn(breakingTime);
                 }
-            } else {
+            } else if(timeTo0 >= yToZero) {
                 if(theta > 0) {
                     leftRotation.burn(timeTo0);
                 } else {
@@ -115,12 +117,11 @@ public class LandingModule {
         // --- Y-burn
         final double signedYForce = this.getVelocity().getY() * mass;
 
-        final double breakingTime = distanceY / Math.abs(this.getVelocity().getY());
-        double toZero = Math.abs(this.getVelocity().getY()) / (this.downThruster.getForce(mass));
+        final double yBreakingTime = distanceY / Math.abs(this.getVelocity().getY());
         //System.out.println(breakingTime + " < " + toZero);
 
-        if((signedYForce < 0 && breakingTime <= toZero) && distanceY > 0.5) {
-            downThruster.burn(breakingTime);
+        if((signedYForce < 0 && yBreakingTime <= yToZero) && distanceY > 0.5) {
+            downThruster.burn(yBreakingTime);
             System.out.println("landing burn");
         }
 
@@ -149,9 +150,9 @@ public class LandingModule {
                     System.out.println("D");
                 }
                 // Are we going too fast? ->  Decelerate
-                else if(timeToX >= breakingTime) {
+                else if(timeToX >= yBreakingTime) {
                     System.out.println("B1");
-                    leftThruster.burn(leftThruster.getForce(mass) / Math.abs(((distanceX / breakingTime) / breakingTime) - Math.abs(this.getVelocity().getX())));
+                    leftThruster.burn(leftThruster.getForce(mass) / Math.abs(((distanceX / yBreakingTime) / yBreakingTime) - Math.abs(this.getVelocity().getX())));
                 }
             } else if (xV < -velocityLimit) { //moving left
                 if (this.getPosition().add(this.velocity.mul(TIME_STEP)).getX() < 0) {
@@ -165,16 +166,16 @@ public class LandingModule {
                 } else if(timeToX <= (Math.abs(this.getVelocity().getX())/ leftThruster.getForce(mass))) {
                     leftThruster.burn( leftThruster.getForce(mass) / Math.abs(((distanceX / timeToX) / timeToX) - Math.abs(this.getVelocity().getX())));
                     System.out.println("H");
-                } else if(timeToX >= breakingTime) {
+                } else if(timeToX >= yBreakingTime) {
                     System.out.println("B2");
-                    rightThruster.burn(rightThruster.getForce(mass) / Math.abs(((distanceX / breakingTime) / breakingTime) - Math.abs(this.getVelocity().getX())));
+                    rightThruster.burn(rightThruster.getForce(mass) / Math.abs(((distanceX / yBreakingTime) / yBreakingTime) - Math.abs(this.getVelocity().getX())));
                 }
                 //System.out.println("a: " + (distanceX / Math.abs(this.getVelocity().getX())) + " - " + Math.abs(this.getVelocity().getX()) / (this.leftThruster.getForce() / mass));
             } else if(distanceX > 0.1) {
                 if (this.getPosition().getX() < 0) {
                     leftThruster.burn(leftThruster.getForce(mass) / Math.abs(((distanceX / timeToX) / timeToX) - Math.abs(this.getVelocity().getX())));
                 } else if (this.getPosition().getX() > 0) {
-                    rightThruster.burn(rightThruster.getForce(mass) / Math.abs(((distanceX / breakingTime) / breakingTime) - Math.abs(this.getVelocity().getX())));
+                    rightThruster.burn(rightThruster.getForce(mass) / Math.abs(((distanceX / yBreakingTime) / yBreakingTime) - Math.abs(this.getVelocity().getX())));
                 }
             }
         }
