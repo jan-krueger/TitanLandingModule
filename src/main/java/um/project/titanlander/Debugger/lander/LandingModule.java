@@ -2,6 +2,8 @@ package um.project.titanlander.Debugger.lander;
 
 import um.project.titanlander.Debugger.DataLogger;
 import um.project.titanlander.Debugger.Vector2;
+import um.project.titanlander.Debugger.lander.thruster.RotationThruster;
+import um.project.titanlander.Debugger.lander.thruster.Thruster;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -12,6 +14,8 @@ public class LandingModule {
 
     public final static double TIME_STEP = 0.05;
     private final static double GRAVITY = 1.352E-2; //0.01352m/s^2
+
+    private boolean isLanded = false;
 
     private Vector2 velocity;
     private Vector2 position;
@@ -29,12 +33,12 @@ public class LandingModule {
     private double width=3;
     private double height=3;
 
-    public Thruster downThruster = new Thruster(Direction.Y_POS, 400);
-    public Thruster leftThruster = new Thruster(Direction.X_POS, 200);
-    public Thruster rightThruster = new Thruster(Direction.X_NEG, 200);
+    public Thruster downThruster = new Thruster(Direction.Y_POS, 400, mass);
+    public Thruster leftThruster = new Thruster(Direction.X_POS, 200, mass);
+    public Thruster rightThruster = new Thruster(Direction.X_NEG, 200, mass);
 
-    public Thruster leftRotation = new Thruster(Direction.X_NEG, 200);
-    public Thruster rightRotation = new Thruster(Direction.X_POS, 200);
+    public RotationThruster leftRotation = new RotationThruster(Direction.X_NEG, 50, mass, Math.sqrt(2), 2);
+    public RotationThruster rightRotation = new RotationThruster(Direction.X_POS, 50, mass, Math.sqrt(2), 2);
 
     private ControllerMode controllerMode;
 
@@ -76,6 +80,11 @@ public class LandingModule {
         final double distanceY = Math.abs(this.getPosition().getY());
         final double distanceX = Math.abs(this.getPosition().getX());
 
+        if(distanceY < 1E-2) {
+            this.isLanded = true;
+            return;
+        }
+
         if(distanceY < 1E-3) {
             StringBuilder buffer = new StringBuilder();
             buffer.append("height,left,down,right,px,x,windStrength\n");
@@ -96,7 +105,7 @@ public class LandingModule {
         // --- Rotation
         if(Math.abs(theta) > 1E-4) {
             final double timeTo0 = Math.abs(theta / thetaVelocity);
-            final double breakingTime = Math.abs(thetaVelocity / leftRotation.getAngularForce(mass).getX()); // assumes both thrusters are equally strong
+            final double breakingTime = Math.abs(thetaVelocity / leftRotation.getForce(mass)); // assumes both thrusters are equally strong
 
             if(Double.isFinite(timeTo0) && timeTo0 <= breakingTime) {
                 if(thetaVelocity > 0) {
@@ -187,6 +196,8 @@ public class LandingModule {
 
     public void updatePosition() {
 
+        if(this.isLanded) return;
+
         this.position = this.position.add(this.velocity.mul(TIME_STEP));
         if(this.position.getY() < 0) {
             this.position = new Vector2(this.position.getX(), 0);
@@ -199,6 +210,10 @@ public class LandingModule {
     }
 
     public void updateVelocity() {
+
+        if(this.isLanded) {
+            return;
+        }
 
         //--- Thrusters
         final double key = this.getPosition().getY();
@@ -230,10 +245,9 @@ public class LandingModule {
         //--- Rotation
         {
             double totalRotation = 0;
-            totalRotation += leftRotation.getAngularThrust(mass).getX();
-            totalRotation += rightRotation.getAngularThrust(mass).getX();
+            totalRotation += leftRotation.getThrust(mass);
+            totalRotation += rightRotation.getThrust(mass);
             this.thetaVelocity += totalRotation;
-            System.out.println("t-velocity:" + this.thetaVelocity);
         }
 
         this.setTheta(this.theta + this.thetaVelocity);

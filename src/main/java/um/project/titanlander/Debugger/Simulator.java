@@ -1,5 +1,6 @@
 package um.project.titanlander.Debugger;
 
+import um.project.titanlander.Debugger.lander.ControllerMode;
 import um.project.titanlander.Debugger.lander.LandingModule;
 
 import javax.imageio.ImageIO;
@@ -16,7 +17,7 @@ public class Simulator {
     }
 
     //---
-    private LandingModule landingModule = new LandingModule(new Vector2(200, 700), new Vector2(-10, -3), LandingModule.ControllerMode.OPEN);
+    private LandingModule landingModule = new LandingModule(new Vector2(200, 700), new Vector2(-10, -3), ControllerMode.OPEN);
     private UI ui = new UI();
 
     public Simulator() {
