@@ -1,4 +1,7 @@
-package um.project.titanlander.Debugger;
+package um.project.titanlander.Debugger.lander;
+
+import um.project.titanlander.Debugger.DataLogger;
+import um.project.titanlander.Debugger.Vector2;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -7,7 +10,7 @@ import java.util.Map;
 
 public class LandingModule {
 
-    private final static double TIME_STEP = 0.05;
+    public final static double TIME_STEP = 0.05;
     private final static double GRAVITY = 1.352E-2; //0.01352m/s^2
 
     private Vector2 velocity;
@@ -30,8 +33,8 @@ public class LandingModule {
     public Thruster leftThruster = new Thruster(Direction.X_POS, 200);
     public Thruster rightThruster = new Thruster(Direction.X_NEG, 200);
 
-    public Thruster leftRotation = new Thruster(Direction.X_NEG, rightThruster.force);
-    public Thruster rightRotation = new Thruster(Direction.X_POS, leftThruster.force);
+    public Thruster leftRotation = new Thruster(Direction.X_NEG, 200);
+    public Thruster rightRotation = new Thruster(Direction.X_POS, 200);
 
     private ControllerMode controllerMode;
 
@@ -273,88 +276,9 @@ public class LandingModule {
 
     @Override
     public String toString() {
-        return String.format("Module\n\tr:[p=%s,v=%s]\n\ta:[p=%s,v=%s,%.2f]", this.realPositions, this.realVelocity, this.position, this.velocity, this.theta);
-    }
-
-    public class Thruster {
-
-        private Direction direction;
-        private double force;
-        private double timeToBurn = 0;
-
-        public Thruster(Direction direction, double force) {
-            this.direction = direction;
-            this.force = force;
-        }
-
-
-        public double getForce(double mass) {
-            return force / mass;
-        }
-
-        /**
-         * Change in velocity.
-         * @param seconds
-         * @return
-         */
-        public void burn(double seconds) {
-            this.timeToBurn = Math.min(seconds, TIME_STEP);
-            //System.out.println(direction + " -> " + seconds);
-        }
-
-        public Vector2 getThrust(double mass) {
-            Vector2 v = new Vector2(0, 0);
-            if(timeToBurn > 0) {
-                v = direction.direction().mul(force).mul(Math.min(TIME_STEP, timeToBurn)).div(mass);
-            }
-            return v;
-        }
-
-        public Vector2 getAngularForce(double mass) {
-            return direction.direction().mul(force).div(mass).div(Math.sqrt(2)).mul(1D / 12D);
-        }
-
-        public Vector2 getAngularThrust(double mass) {
-            Vector2 t = new Vector2();
-            if(timeToBurn > 0) {
-                t = direction.direction().mul(force).div(mass).div(Math.sqrt(2)).mul(1D / 12D).mul(Math.min(TIME_STEP, timeToBurn));
-            }
-            return t;
-        }
-
-        public void update() {
-            if(timeToBurn != 0) {
-                timeToBurn -= TIME_STEP;
-                timeToBurn = Math.max(timeToBurn, 0);
-            }
-        }
-
-        public boolean isBurning() {
-            return this.timeToBurn > 0;
-        }
-
-    }
-
-    public enum Direction {
-
-        X_NEG(new Vector2(-1, 0)),
-        X_POS(new Vector2(1, 0)),
-        Y_POS(new Vector2(0, 1));
-
-        private Vector2 dir;
-        Direction(Vector2 dir) {
-            this.dir = dir;
-        }
-
-        public Vector2 direction() {
-            return dir;
-        }
-
-    }
-
-    public enum ControllerMode {
-        OPEN,
-        CLOSED
+        return String.format("Module\n\tr:[p=%s,v=%s,θ=%.2f,θ'=%.2f]\n\ta:[p=%s,v=%s,θ=%.2f,θ'=%.2f]",
+                this.realPositions, this.realVelocity, Math.toDegrees(this.theta), Math.toDegrees(this.thetaVelocity),
+                this.position, this.velocity, Math.toDegrees(this.theta), Math.toDegrees(this.thetaVelocity));
     }
 
     public static Vector2 wind(Vector2 pos, double mass) {

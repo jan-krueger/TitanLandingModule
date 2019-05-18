@@ -1,5 +1,7 @@
 package um.project.titanlander.Debugger;
 
+import um.project.titanlander.Debugger.lander.LandingModule;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -27,7 +29,7 @@ public class Simulator {
             landingModule.updateVelocity();
             landingModule.updatePosition();
             landingModule.updateController();
-            System.out.println(landingModule);
+            System.out.println(landingModule.toString());
             try {
                 Thread.sleep(3);
             } catch (InterruptedException e) {
