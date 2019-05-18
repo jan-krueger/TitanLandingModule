@@ -24,15 +24,15 @@ public class RotationThruster extends IThruster<Double, Double> {
     }
 
     @Override
-    public Double getForce(double mass) {
-        return getDirection().direction().mul(getRawForce()).div(mass).div(r).mul(Math.pow(h, 4) / 12D).getX();
+    public Double getForce() {
+        return getDirection().direction().mul(getRawForce()).div(getMass()).div(r).mul(Math.pow(h, 4) / 12D).getX();
     }
 
     @Override
-    public Double getThrust(double mass) {
+    public Double getThrust() {
         Vector2 t = new Vector2();
         if(isBurning()) {
-            t = getDirection().direction().mul(getRawForce()).div(mass).div(r).mul(Math.pow(h, 4) / 12D).mul(Math.min(LandingModule.TIME_STEP, getTimeToBurn()));
+            t = getDirection().direction().mul(getRawForce()).div(getMass()).div(r).mul(Math.pow(h, 4) / 12D).mul(Math.min(LandingModule.TIME_STEP, getTimeToBurn()));
         }
         return t.getX();
     }

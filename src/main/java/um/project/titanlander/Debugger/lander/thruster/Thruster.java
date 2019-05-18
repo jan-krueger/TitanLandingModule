@@ -11,15 +11,15 @@ public class Thruster extends IThruster<Double, Vector2> {
     }
 
     @Override
-    public Double getForce(double mass) {
-        return getRawForce() / mass;
+    public Double getForce() {
+        return getRawForce() / getMass();
     }
 
     @Override
-    public Vector2 getThrust(double mass) {
+    public Vector2 getThrust() {
         Vector2 v = new Vector2(0, 0);
         if(isBurning()) {
-            v = getDirection().direction().mul(getRawForce()).mul(Math.min(LandingModule.TIME_STEP, getTimeToBurn())).div(mass);
+            v = getDirection().direction().mul(getRawForce()).mul(Math.min(LandingModule.TIME_STEP, getTimeToBurn())).div(getMass());
         }
         return v;
     }

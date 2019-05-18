@@ -1,6 +1,5 @@
 package um.project.titanlander.Debugger.lander.thruster;
 
-import um.project.titanlander.Debugger.Vector2;
 import um.project.titanlander.Debugger.lander.Direction;
 import um.project.titanlander.Debugger.lander.LandingModule;
 
@@ -9,10 +8,16 @@ public abstract class IThruster<F,T> {
     private Direction direction;
     private double force;
     private double timeToBurn = 0;
+    private double mass;
 
     public IThruster(Direction direction, double force, double mass) {
         this.direction = direction;
         this.force = force;
+        this.mass = mass;
+    }
+
+    public double getMass() {
+        return mass;
     }
 
     public double getTimeToBurn() {
@@ -31,9 +36,9 @@ public abstract class IThruster<F,T> {
         this.timeToBurn = Math.min(seconds, LandingModule.TIME_STEP);
     }
 
-    public abstract F getForce(double mass);
+    public abstract F getForce();
 
-    public abstract T getThrust(double mass);
+    public abstract T getThrust();
 
     public final void update() {
         if(timeToBurn != 0) {
