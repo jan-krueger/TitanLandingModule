@@ -28,6 +28,10 @@ public class Vector2 {
         return new Vector2(this.x + x.getX(), this.y + x.getY());
     }
 
+    public Vector2 sub(Vector2 x) {
+        return new Vector2(this.x - x.getX(), this.y - x.getY());
+    }
+
     public Vector2 normalise() {
         return new Vector2(this.x / this.length, this.y / this.length);
     }

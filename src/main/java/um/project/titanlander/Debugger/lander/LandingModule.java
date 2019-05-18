@@ -292,7 +292,7 @@ public class LandingModule {
 
         Vector2 v = wind(getPosition(), mass);
         dataLogger.add(key, "windStrength", v.getX());
-        if(!Double.isNaN(v.getX()) && false) {
+        if(!Double.isNaN(v.getX())) {
             if(this.controllerMode == ControllerMode.CLOSED) {
                 this.velocity = this.velocity.add(v);
             }
@@ -329,7 +329,7 @@ public class LandingModule {
     public static Vector2 wind(Vector2 pos, double mass) {
         final double speed = 2D * (Math.log(pos.getY() / 0.15D)/Math.log(20D/0.15D));
         final Vector2 dir = new Vector2(0.1 * Math.sin(pos.getY()/100D), 0).normalise();
-        return dir.mul(speed).div(mass);
+        return dir.mul(speed).div(mass).mul(TIME_STEP);
     }
 
 }
