@@ -106,54 +106,51 @@ public class LandingModule {
             final double thetaDistance = Math.abs(theta);
 
             //--- Turning right
-            if(thetaVelocity > 0) {
+            final double rotationVelocityError = Math.toRadians(1E-3);
+            final double rotationError = Math.toRadians(1E-3);
+            if(thetaVelocity > rotationVelocityError) {
 
                 // correct direction
-                if(theta < 0) {
+                if(theta < -rotationError) {
                     //Do we have to break?
                     if(thetaBreakingTime >= thetaToZero) {
                         leftRotation.burn(Math.abs(leftRotation.getForce() / ((thetaDistance / thetaBreakingTime) / thetaBreakingTime) - thetaVelocity));
-                    } else if(theta + thetaVelocity * TIME_STEP >= 0) {
-                        leftRotation.burn(Math.abs(thetaVelocity / leftRotation.getForce()));
                     }
                     //Do we have to accelerate?
                 }
                 // wrong direction
-                else if(theta > 0) {
+                else if(theta > rotationError) {
                     //breaking
                     leftRotation.burn(Math.abs(thetaVelocity / leftRotation.getForce()));
                 }
 
-            } else if(thetaVelocity < 0) {
+            } else if(thetaVelocity < -rotationVelocityError) {
 
                 // correct direction
-                if(theta > 0) {
+                if(theta > rotationError) {
                     //Do we have to break?
                     if(thetaBreakingTime >= thetaToZero) {
                         rightRotation.burn(Math.abs(rightRotation.getForce() / ((thetaDistance / thetaBreakingTime) / thetaBreakingTime) - thetaVelocity));
-                    } else if(theta + thetaVelocity * TIME_STEP <= 0) {
-                        rightRotation.burn(Math.abs(thetaVelocity / rightRotation.getForce()));
                     }
                     //Do we have to accelerate?
                 }
                 // wrong direction
-                else if(theta < 0) {
+                else if(theta < -rotationError) {
                     //breaking
                     rightRotation.burn(Math.abs(thetaVelocity / rightRotation.getForce()));
                 }
 
             } else {
-                if(theta > 0) {
+                if(theta > 1E-3) {
                     leftRotation.burn(Math.abs(theta / leftRotation.getForce()));
-                } else if(theta < 0) {
+                } else if(theta < -1E-3) {
                     rightRotation.burn(Math.abs(theta / rightRotation.getForce()));
-
                 }
             }
-
-
         }
 
+        // TODO 5 degrees seems alright, we should do some calculations to figure out what is acceptable and not just some
+        //  magic number
         if(Math.abs(theta) > Math.toRadians(5)) {
             return;
         }
