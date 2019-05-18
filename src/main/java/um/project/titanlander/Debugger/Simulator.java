@@ -1,7 +1,11 @@
 package um.project.titanlander.Debugger;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
 public class Simulator {
 
@@ -10,7 +14,7 @@ public class Simulator {
     }
 
     //---
-    private LandingModule landingModule = new LandingModule(new Vector2(50, 700), new Vector2(-20, -3), LandingModule.ControllerMode.CLOSED);
+    private LandingModule landingModule = new LandingModule(new Vector2(200, 700), new Vector2(-10, -3), LandingModule.ControllerMode.OPEN);
     private UI ui = new UI();
 
     public Simulator() {
@@ -24,19 +28,29 @@ public class Simulator {
             landingModule.updatePosition();
             landingModule.updateController();
             System.out.println(landingModule);
-            ui.repaint();
-                System.out.println(i++);
             try {
                 Thread.sleep(3);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            ui.repaint();
+            System.out.println(i++);
         }
     }
 
     public class UI extends JPanel {
 
         private JFrame frame = new JFrame();
+
+        private BufferedImage background;
+
+        {
+            try {
+                background = ImageIO.read(new File("src/main/resources/background.png"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
         public UI() {
             this.frame.add(this);
@@ -47,9 +61,9 @@ public class Simulator {
 
         @Override
         public void paintComponent(Graphics g) {
+            super.paintComponent(g);
 
-            g.setColor(Color.BLACK);
-            g.fillRect(0, 0, frame.getWidth(), frame.getHeight());
+            //g.drawImage(background, 0, 0, null);
 
             g.setColor(Color.GREEN);
             g.drawRect(0, 0, 1280, 720);
