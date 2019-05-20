@@ -6,6 +6,7 @@ import um.project.titanlander.Debugger.lander.thruster.RotationThruster;
 import um.project.titanlander.Debugger.lander.thruster.Thruster;
 
 import java.io.IOException;
+import java.lang.invoke.VolatileCallSite;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -377,6 +378,8 @@ public class LandingModule {
     public static Vector3 wind(Vector3 pos, double mass) {
         final double speed = 2D * (Math.log(pos.getY() / 0.15D)/Math.log(20D/0.15D));
         final Vector3 dir = new Vector3(0.1 * Math.sin(pos.getY()/100D), 0, 0).normalise();
+
+        //final Vector3 a = new Vector3(1, 1, 1).normalise();
         return dir.mul(speed).div(mass).mul(TIME_STEP);
     }
 
