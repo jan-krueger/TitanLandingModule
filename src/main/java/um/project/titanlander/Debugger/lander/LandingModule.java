@@ -153,7 +153,7 @@ public class LandingModule {
         final double yToZero = Math.abs(this.getVelocity().getY()) / (this.downThruster.getForce());
         final double timeToX = Math.abs(this.getPosition().getX()) / Math.abs(this.getVelocity().getX());
         final double timeToZ = Math.abs(this.getPosition().getZ()) / Math.abs(this.getVelocity().getZ());
-        if((timeToY + halfToZero + timeToX + timeToZ) >= yToZero) {
+        if((timeToY + halfToZero + timeToX + timeToZ) <= yToZero) {
             this.targetTheta = 0;
         }
 
@@ -173,7 +173,7 @@ public class LandingModule {
             } else {
                 targetTheta = 0;
             }
-        } else if((timeToY + halfToZero + timeToX + timeToZ) < yToZero) {
+        } else if((timeToY + halfToZero + timeToX + timeToZ) > yToZero) {
             if(Math.abs(targetTheta - Math.PI) <= Math.toRadians(1)) {
                 this.downThruster.burn(TIME_STEP);
             } else {
