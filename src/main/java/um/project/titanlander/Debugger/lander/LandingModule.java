@@ -149,9 +149,11 @@ public class LandingModule {
             }
         }
 
-        final double yBreakingTime = (distanceY / Math.abs(this.getVelocity().getY()));
+        final double timeToY = (distanceY / Math.abs(this.getVelocity().getY()));
         final double yToZero = Math.abs(this.getVelocity().getY()) / (this.downThruster.getForce());
-        if((yToZero + halfToZero) * 2 >= yBreakingTime) {
+        final double timeToX = Math.abs(this.getPosition().getX()) / Math.abs(this.getVelocity().getX());
+        final double timeToZ = Math.abs(this.getPosition().getZ()) / Math.abs(this.getVelocity().getZ());
+        if((timeToY + halfToZero + timeToX + timeToZ) >= yToZero) {
             this.targetTheta = 0;
         }
 
@@ -164,14 +166,14 @@ public class LandingModule {
         // --- Y-burn
         final double signedYForce = this.getVelocity().getY() * mass;
 
-        if((signedYForce < 0 && (yBreakingTime + halfToZero) <= yToZero) && distanceY > 0.5) {
+        if((signedYForce < 0 && (timeToY + halfToZero + timeToX + timeToZ) <= yToZero) && distanceY > 0.5) {
             if(Math.abs(theta) <= Math.toRadians(5)) {
-                downThruster.burn(yBreakingTime);
+                downThruster.burn(timeToY);
                 System.out.println("landing burn");
             } else {
                 targetTheta = 0;
             }
-        } else if((yToZero+ halfToZero) * 2 < yBreakingTime) {
+        } else if((timeToY + halfToZero + timeToX + timeToZ) < yToZero) {
             if(Math.abs(targetTheta - Math.PI) <= Math.toRadians(1)) {
                 this.downThruster.burn(TIME_STEP);
             } else {
@@ -181,12 +183,13 @@ public class LandingModule {
         }
 
         //Horizontal Translation
+        // Note: Depending on the orientation of the module, we have to fire opposite thrusters.
         if(Math.abs(targetTheta) <= Math.toRadians(1)) {
-            controlHorizontalAxis(Vector3.Component.X, leftThruster, rightThruster, Math.abs(getPosition().getX()), yBreakingTime, this.getVelocity().getX() * mass, this.getVelocity().getX());
-            controlHorizontalAxis(Vector3.Component.Z, frontThruster, backThruster, Math.abs(getPosition().getZ()), yBreakingTime, this.getVelocity().getZ() * mass, this.getVelocity().getZ());
+            controlHorizontalAxis(Vector3.Component.X, leftThruster, rightThruster, Math.abs(getPosition().getX()), timeToY, this.getVelocity().getX() * mass, this.getVelocity().getX());
+            controlHorizontalAxis(Vector3.Component.Z, frontThruster, backThruster, Math.abs(getPosition().getZ()), timeToY, this.getVelocity().getZ() * mass, this.getVelocity().getZ());
         } else if(Math.abs(targetTheta-Math.PI) <= Math.toRadians(5)) {
-            controlHorizontalAxis(Vector3.Component.X, rightThruster, leftThruster, Math.abs(getPosition().getX()), yBreakingTime, this.getVelocity().getX() * mass, this.getVelocity().getX());
-            controlHorizontalAxis(Vector3.Component.Z, backThruster, frontThruster, Math.abs(getPosition().getZ()), yBreakingTime, this.getVelocity().getZ() * mass, this.getVelocity().getZ());
+            controlHorizontalAxis(Vector3.Component.X, rightThruster, leftThruster, Math.abs(getPosition().getX()), timeToY, this.getVelocity().getX() * mass, this.getVelocity().getX());
+            controlHorizontalAxis(Vector3.Component.Z, backThruster, frontThruster, Math.abs(getPosition().getZ()), timeToY, this.getVelocity().getZ() * mass, this.getVelocity().getZ());
         }
 
 
@@ -200,7 +203,7 @@ public class LandingModule {
         }
 
         final double velocityLimit = 1E-3;
-        final double timeToX = (distanceToAxis / Math.abs(aV));
+        final double timeToA = (distanceToAxis / Math.abs(aV));
 
         if (aV > velocityLimit) { //moving right
             // Do we overstep in the next update?
@@ -212,11 +215,11 @@ public class LandingModule {
                 positiveThruster.burn(Math.abs((thrustDelta) / positiveThruster.getForce()));
             }
             // Are we too slow to get to x=0 in time? -> Accelerate
-            else if(timeToX <= (Math.abs(this.getVelocity().get(axis))/ negativeThruster.getForce())) {
-                negativeThruster.burn( negativeThruster.getForce() / Math.abs(((distanceToAxis / timeToX) / timeToX) - Math.abs(this.getVelocity().get(axis))));
+            else if(timeToA <= (Math.abs(this.getVelocity().get(axis))/ negativeThruster.getForce())) {
+                negativeThruster.burn( negativeThruster.getForce() / Math.abs(((distanceToAxis / timeToA) / timeToA) - Math.abs(this.getVelocity().get(axis))));
             }
             // Are we going too fast? ->  Decelerate
-            else if(timeToX >= yBreakingTime) {
+            else if(timeToA >= yBreakingTime) {
                 positiveThruster.burn(positiveThruster.getForce() / Math.abs(((distanceToAxis / yBreakingTime) / yBreakingTime) - Math.abs(this.getVelocity().get(axis))));
             }
         } else if (aV < -velocityLimit) { //moving left
@@ -226,14 +229,14 @@ public class LandingModule {
                 final double maxThrust = (positiveThruster.getForce());
                 final double thrustDelta = maxThrust - Math.abs(aF);
                 negativeThruster.burn(Math.abs((thrustDelta) / negativeThruster.getForce()));
-            } else if(timeToX <= (Math.abs(this.getVelocity().get(axis))/ positiveThruster.getForce())) {
-                positiveThruster.burn( positiveThruster.getForce() / Math.abs(((distanceToAxis / timeToX) / timeToX) - Math.abs(this.getVelocity().get(axis))));
-            } else if(timeToX >= yBreakingTime) {
+            } else if(timeToA <= (Math.abs(this.getVelocity().get(axis))/ positiveThruster.getForce())) {
+                positiveThruster.burn( positiveThruster.getForce() / Math.abs(((distanceToAxis / timeToA) / timeToA) - Math.abs(this.getVelocity().get(axis))));
+            } else if(timeToA >= yBreakingTime) {
                 negativeThruster.burn(negativeThruster.getForce() / Math.abs(((distanceToAxis / yBreakingTime) / yBreakingTime) - Math.abs(this.getVelocity().get(axis))));
             }
         } else if(distanceToAxis > 0.1) {
             if (this.getPosition().get(axis) < 0) {
-                positiveThruster.burn(positiveThruster.getForce() / Math.abs(((distanceToAxis / timeToX) / timeToX) - Math.abs(this.getVelocity().get(axis))));
+                positiveThruster.burn(positiveThruster.getForce() / Math.abs(((distanceToAxis / timeToA) / timeToA) - Math.abs(this.getVelocity().get(axis))));
             } else if (this.getPosition().get(axis) > 0) {
                 negativeThruster.burn(negativeThruster.getForce() / Math.abs(((distanceToAxis / yBreakingTime) / yBreakingTime) - Math.abs(this.getVelocity().get(axis))));
             }

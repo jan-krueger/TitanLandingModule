@@ -26,7 +26,7 @@ public class Simulator {
     private XYChart radarChart = new XYChartBuilder().title("horizontal").height(400).width(400).build();
     private XYChart height = new XYChartBuilder().title("height").height(400).width(400).build();
 
-    private LandingModule landingModule = new LandingModule(new Vector3(200, 5.48433e5, -100), new Vector3(-10, -400, -10), ControllerMode.CLOSED);
+    private LandingModule landingModule = new LandingModule(new Vector3(200, 1e5 /*5.48433e4*/, -100), new Vector3(-10, -200, -10), ControllerMode.CLOSED);
     private UI ui = new UI();
     JFrame wrapper;
 
