@@ -6,8 +6,8 @@ import um.project.titanlander.Debugger.lander.LandingModule;
 
 public class RotationThruster extends IThruster<Double, Double> {
 
-    private double r;
-    private double h;
+    private final double r;
+    private final double h;
 
     /**
      *
