@@ -12,7 +12,7 @@ import java.util.Map;
 
 public class LandingModule {
 
-    public final static double TIME_STEP = 0.5;
+    public final static double TIME_STEP = 1;
     private final static double GRAVITY = 1.352E-2; //0.01352m/s^2
 
     private boolean isLanded = false;
@@ -153,7 +153,7 @@ public class LandingModule {
         final double yToZero = Math.abs(this.getVelocity().getY() / (this.downThruster.getForce())) ;
         final double timeToX = Math.abs(this.getPosition().getX()) / Math.abs(this.getVelocity().getX());
         final double timeToZ = Math.abs(this.getPosition().getZ()) / Math.abs(this.getVelocity().getZ());
-        if((yToZero + halfToZero + timeToX + timeToZ) * 1 >= timeToY) {
+        if((yToZero + halfToZero + timeToX + timeToZ) * 2 >= timeToY) {
             this.targetTheta = 0;
         }
 
@@ -173,7 +173,7 @@ public class LandingModule {
             } else {
                 targetTheta = 0;
             }
-        } else if((yToZero + halfToZero + timeToX + timeToZ) * 1 < timeToY) {
+        } else if((yToZero + halfToZero + timeToX + timeToZ) * 2 < timeToY) {
             if(Math.abs(targetTheta - Math.PI) <= Math.toRadians(1)) {
                 this.downThruster.burn(TIME_STEP);
             } else {
@@ -281,6 +281,8 @@ public class LandingModule {
         dataLogger.add(key, "realPositionZ", realPositions.getZ());
         dataLogger.add(key, "position", position.getX());
 
+        double gForce = 0;
+
         Vector3 thrustTotal = new Vector3(0, 0, 0);
         {
             Vector3 thrust = applyRotation(downThruster.getThrust());
@@ -311,12 +313,15 @@ public class LandingModule {
         this.realVelocity = this.realVelocity.add(thrustTotal);
         this.velocity = this.velocity.add(thrustTotal);
 
+        gForce += thrustTotal.length();
+
         //--- Rotation
         {
             double totalRotation = 0;
             totalRotation += leftRotation.getThrust();
             totalRotation += rightRotation.getThrust();
             this.thetaVelocity += totalRotation;
+            gForce += Math.PI * 2 * height * totalRotation;
         }
 
 
@@ -326,15 +331,19 @@ public class LandingModule {
         this.realVelocity = this.realVelocity.add(gravity);
         this.velocity = this.velocity.add(gravity);
 
+        gForce += gravity.length();
 
         Vector3 v = wind(getPosition(), mass);
         dataLogger.add(key, "windStrength", v.getX());
         if(!Double.isNaN(v.getX())) {
+            gForce += v.length();
             if(this.controllerMode == ControllerMode.CLOSED) {
                 this.velocity = this.velocity.add(v);
             }
             this.realVelocity = this.realVelocity.add(v);
         }
+
+        System.out.println("gforce: " + (gForce / 9.8));
 
         leftRotation.update();
         rightRotation.update();
