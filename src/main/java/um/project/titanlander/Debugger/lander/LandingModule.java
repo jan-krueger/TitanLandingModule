@@ -178,7 +178,7 @@ public class LandingModule {
                 this.downThruster.burn(TIME_STEP);
             } else {
                 //System.out.println("ROTATE");
-                this.targetTheta = Math.toRadians(179.5);
+                //this.targetTheta = Math.toRadians(179.5);
             }
         }
 
