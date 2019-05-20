@@ -12,7 +12,7 @@ import java.util.Map;
 
 public class LandingModule {
 
-    public final static double TIME_STEP = 0.05;
+    public final static double TIME_STEP = 1;
     private final static double GRAVITY = 1.352E-2; //0.01352m/s^2
 
     private boolean isLanded = false;
@@ -38,8 +38,8 @@ public class LandingModule {
     public Thruster frontThruster = new Thruster(Direction.Z_POS, 200, mass);
     public Thruster backThruster = new Thruster(Direction.Z_NEG, 200, mass);
 
-    public RotationThruster leftRotation = new RotationThruster(Direction.X_NEG, 50.55361, mass, Math.sqrt(2), height);
-    public RotationThruster rightRotation = new RotationThruster(Direction.X_POS, 50.55361, mass, Math.sqrt(2), height);
+    public RotationThruster leftRotation = new RotationThruster(Direction.X_NEG, 5.55361, mass, Math.sqrt(2), height);
+    public RotationThruster rightRotation = new RotationThruster(Direction.X_POS, 5.55361, mass, Math.sqrt(2), height);
 
     private ControllerMode controllerMode;
 
@@ -98,7 +98,7 @@ public class LandingModule {
         final double thetaToZero = Math.abs((theta-targetTheta) / thetaVelocity);
         final double halfToZero = Math.abs(Math.PI / leftRotation.getForce());
         if(Math.abs((theta-targetTheta)) > 1E-4) {
-            final double thetaBreakingTime = Math.abs(thetaVelocity / leftRotation.getForce()) / TIME_STEP; // assumes both thrusters are equally strong
+            final double thetaBreakingTime = Math.abs(thetaVelocity / leftRotation.getForce()); // assumes both thrusters are equally strong
             final double thetaDistance = Math.abs((theta-targetTheta));
 
             //--- Turning right
@@ -150,10 +150,10 @@ public class LandingModule {
         }
 
         final double timeToY = (distanceY / Math.abs(this.getVelocity().getY()));
-        final double yToZero = Math.abs(this.getVelocity().getY()) / (this.downThruster.getForce());
+        final double yToZero = Math.abs(this.getVelocity().getY() / (this.downThruster.getForce())) ;
         final double timeToX = Math.abs(this.getPosition().getX()) / Math.abs(this.getVelocity().getX());
         final double timeToZ = Math.abs(this.getPosition().getZ()) / Math.abs(this.getVelocity().getZ());
-        if((timeToY + halfToZero + timeToX + timeToZ) <= yToZero) {
+        if((yToZero + halfToZero + timeToX + timeToZ) * 2 >= timeToY) {
             this.targetTheta = 0;
         }
 
@@ -166,28 +166,28 @@ public class LandingModule {
         // --- Y-burn
         final double signedYForce = this.getVelocity().getY() * mass;
 
-        if((signedYForce < 0 && (timeToY + halfToZero + timeToX + timeToZ) <= yToZero) && distanceY > 0.5) {
+        if((signedYForce < 0 && timeToY <= yToZero) && distanceY > 0.5) {
             if(Math.abs(theta) <= Math.toRadians(5)) {
                 downThruster.burn(timeToY);
                 System.out.println("landing burn");
             } else {
                 targetTheta = 0;
             }
-        } else if((timeToY + halfToZero + timeToX + timeToZ) > yToZero) {
+        } else if((yToZero + halfToZero + timeToX + timeToZ) < timeToY) {
             if(Math.abs(targetTheta - Math.PI) <= Math.toRadians(1)) {
                 this.downThruster.burn(TIME_STEP);
             } else {
-                System.out.println("ROTATE");
+                //System.out.println("ROTATE");
                 this.targetTheta = Math.toRadians(179.5);
             }
         }
 
         //Horizontal Translation
         // Note: Depending on the orientation of the module, we have to fire opposite thrusters.
-        if(Math.abs(targetTheta) <= Math.toRadians(1)) {
+        if(Math.abs(theta) <= Math.toRadians(1)) {
             controlHorizontalAxis(Vector3.Component.X, leftThruster, rightThruster, Math.abs(getPosition().getX()), timeToY, this.getVelocity().getX() * mass, this.getVelocity().getX());
             controlHorizontalAxis(Vector3.Component.Z, frontThruster, backThruster, Math.abs(getPosition().getZ()), timeToY, this.getVelocity().getZ() * mass, this.getVelocity().getZ());
-        } else if(Math.abs(targetTheta-Math.PI) <= Math.toRadians(5)) {
+        } else if(Math.abs(theta-Math.PI) <= Math.toRadians(5)) {
             controlHorizontalAxis(Vector3.Component.X, rightThruster, leftThruster, Math.abs(getPosition().getX()), timeToY, this.getVelocity().getX() * mass, this.getVelocity().getX());
             controlHorizontalAxis(Vector3.Component.Z, backThruster, frontThruster, Math.abs(getPosition().getZ()), timeToY, this.getVelocity().getZ() * mass, this.getVelocity().getZ());
         }

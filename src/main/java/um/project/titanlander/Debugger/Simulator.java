@@ -26,7 +26,7 @@ public class Simulator {
     private XYChart radarChart = new XYChartBuilder().title("horizontal").height(400).width(400).build();
     private XYChart height = new XYChartBuilder().title("height").height(400).width(400).build();
 
-    private LandingModule landingModule = new LandingModule(new Vector3(200, 5e5 /*5.48433e4*/, -100), new Vector3(-10, -3, -10), ControllerMode.CLOSED);
+    private LandingModule landingModule = new LandingModule(new Vector3(200, 1.5e5 /*5.48433e4*/, -100), new Vector3(-10, -2, -10), ControllerMode.CLOSED);
     private UI ui = new UI();
     JFrame wrapper;
 
@@ -53,9 +53,9 @@ public class Simulator {
         Map<Vector3, Vector3> pos = new LinkedHashMap<>();
 
         while (true) {
+            landingModule.updateController();
             landingModule.updateVelocity();
             landingModule.updatePosition();
-            landingModule.updateController();
             System.out.println(landingModule.toString());
 
             //---
