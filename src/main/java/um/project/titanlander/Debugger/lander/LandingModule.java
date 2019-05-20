@@ -318,7 +318,7 @@ public class LandingModule {
 
         //--- Gravity
         //v+1 = v + (Gv*m)/deltaY
-        Vector3 gravity = new Vector3();
+        Vector3 gravity = new Vector3(0, GRAVITY, 0).mul(mass).div(Math.pow(1287850D-this.getPosition().getY(), 2)).mul(-1);
         this.realVelocity = this.realVelocity.add(gravity);
         this.velocity = this.velocity.add(gravity);
 
